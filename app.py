@@ -12,8 +12,8 @@ URL = "https://kosis.kr/openapi/Param/statisticsParameterData.do"
 params = {
     "method": "getList",
     "apiKey": API_KEY,
-    "itmId": "16118AAD6_15118AI8AA",  # 기본: 사고자 수 (원하면 선택 가능)
-    "objL1": "A02",  # ✅ 산업별
+    "itmId": "16118AAD6_15118AI8AA",  # 사고자 수
+    "objL1": "A02",  # 산업별
     "format": "json",
     "jsonVD": "Y",
     "prdSe": "Y",
@@ -33,28 +33,27 @@ except ValueError:
 
 if isinstance(data, list):
     df = pd.DataFrame(data)
+    if 'C1_NM' not in df.columns:
+        st.error("❌ 응답 데이터에 'C1_NM' 필드가 없습니다.")
+        st.stop()
     df = df[['PRD_DE', 'C1_NM', 'DT']]
     df['DT'] = pd.to_numeric(df['DT'], errors='coerce')
     df = df.dropna(subset=['DT'])
     df = df[df['DT'] >= 0]
 
-    # ✅ 연도 선택
     year_list = sorted(df['PRD_DE'].unique())
     selected_years = st.multiselect("📅 연도를 선택하세요 (복수 선택)", year_list, default=[year_list[-1]])
 
     df_selected = df[df['PRD_DE'].isin(selected_years)]
-
-    # ✅ 산업명이 y축이 되도록 정렬
     df_selected = df_selected.sort_values("DT", ascending=False)
     df_selected['DT_fmt'] = df_selected['DT'].map(lambda x: f"{x:,.0f}")
 
-    # ✅ 그래프 생성 (x: 연도, y: 산업명)
     fig = px.bar(
         df_selected,
         x='DT',
         y='C1_NM',
         color='PRD_DE',
-        orientation='h',  # ✅ 수평 막대
+        orientation='h',
         text='DT_fmt',
         labels={'DT': '사고자 수', 'C1_NM': '산업명', 'PRD_DE': '연도'},
         title="연도별 산업별 사고자 수"
