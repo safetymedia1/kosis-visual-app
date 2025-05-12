@@ -3,7 +3,7 @@ import pandas as pd
 import requests
 import plotly.express as px
 
-st.title("📊 산업재해 통계 시각화 (선택 항목 및 연도별 보기)")
+st.title("📊 산업재해 통계 시각화 (다중 연도 선택)")
 
 API_KEY = st.secrets["KOSIS_API_KEY"]
 
@@ -35,23 +35,24 @@ if isinstance(data, list):
     df = df[['PRD_DE', 'ITM_NM', 'DT']]
     df['DT'] = pd.to_numeric(df['DT'], errors='coerce')
 
-    # 선택 가능한 항목 (사고자수, 사망자수 등)
+    # 항목 선택
     item_list = df['ITM_NM'].unique().tolist()
     default_item_index = item_list.index("총계") if "총계" in item_list else 0
     selected_item = st.selectbox("📌 항목을 선택하세요", item_list, index=default_item_index)
 
-    # 선택 가능한 연도
+    # 다중 연도 선택
     year_list = sorted(df['PRD_DE'].unique())
-    selected_year = st.selectbox("📅 연도를 선택하세요", year_list, index=len(year_list)-1)
+    selected_years = st.multiselect("📅 연도를 선택하세요 (복수 선택)", year_list, default=year_list[-1:])
 
-    # 선택된 항목 + 연도 기준으로 필터링
-    df_selected = df[(df['ITM_NM'] == selected_item) & (df['PRD_DE'] == selected_year)]
+    # 조건 필터링
+    df_selected = df[(df['ITM_NM'] == selected_item) & (df['PRD_DE'].isin(selected_years))]
+    df_selected = df_selected.sort_values("PRD_DE")
 
     # 시각화
     fig = px.bar(df_selected, x='PRD_DE', y='DT',
                  text='DT',
                  labels={'PRD_DE': '연도', 'DT': '사고 건수'},
-                 title=f"{selected_year}년 산업재해 통계: {selected_item}")
+                 title=f"산업재해 통계: {selected_item} (선택 연도별 비교)")
 
     fig.update_traces(texttemplate='%{text:.0f}', textposition='outside')
     fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
