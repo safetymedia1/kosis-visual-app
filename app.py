@@ -3,7 +3,7 @@ import pandas as pd
 import requests
 import plotly.express as px
 
-st.title("📊 산업재해 통계 시각화 (연도별 비교, 음수 제거 + y축 조정)")
+st.title("📊 산업재해 통계 시각화 (음수 제거 + y축 간격 조정)")
 
 API_KEY = st.secrets["KOSIS_API_KEY"]
 
@@ -33,9 +33,10 @@ except ValueError:
 if isinstance(data, list):
     df = pd.DataFrame(data)
     df = df[['PRD_DE', 'ITM_NM', 'DT']]
-    df['DT'] = pd.to_numeric(df['DT'], errors='coerce')
 
-    # ❌ 음수 제거
+    # ✅ 수치 변환 + NaN 제거 + 음수 제거
+    df['DT'] = pd.to_numeric(df['DT'], errors='coerce')
+    df = df.dropna(subset=['DT'])
     df = df[df['DT'] >= 0]
 
     # 항목 선택
@@ -50,15 +51,15 @@ if isinstance(data, list):
     df_selected = df[(df['ITM_NM'] == selected_item) & (df['PRD_DE'].isin(selected_years))]
     df_selected = df_selected.sort_values("PRD_DE")
 
-    # 시각화: 툴팁 및 텍스트 포맷
+    # 시각화
     fig = px.bar(
-        df_selected, 
-        x='PRD_DE', 
+        df_selected,
+        x='PRD_DE',
         y='DT',
         text='DT',
         hover_data={'PRD_DE': True, 'ITM_NM': True, 'DT': True},
         labels={'PRD_DE': '연도', 'DT': '사고 건수'},
-        title=f"산업재해 통계: {selected_item} (선택 연도별 비교)"
+        title=f"산업재해 통계: {selected_item} (연도별 비교)"
     )
 
     fig.update_traces(
@@ -67,7 +68,6 @@ if isinstance(data, list):
         hovertemplate='연도: %{x}<br>항목: %{customdata[1]}<br>사고 건수: %{y}건<extra></extra>'
     )
 
-    # ✅ y축 눈금 간격 5로 고정
     fig.update_yaxes(dtick=5)
 
     fig.update_layout(
