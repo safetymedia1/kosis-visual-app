@@ -4,28 +4,10 @@ import requests
 import plotly.express as px
 
 # 제목
-st.title("📊 산업재해 통계 시각화 (2013–2023, 분류 기준 선택)")
+st.title("📊 산업재해 통계 시각화 (성별 분류)")
 
 # API 키
 API_KEY = st.secrets["KOSIS_API_KEY"]
-
-# 분류 기준 매핑 (objL1)
-objL1_options = {
-    "전체": "A01",
-    "산업별": "A02",
-    "규모별": "A03",
-    "성별": "A04",
-    "연령별": "A05",
-    "직종별": "A06",
-    "발생형태별": "A07",
-    "기인물별": "A08",
-    "작업지역*공정별": "A09",
-    "작업내용별": "A10"
-}
-
-# 사용자 선택
-selected_category_label = st.selectbox("📂 분류 기준 선택", list(objL1_options.keys()))
-selected_objL1 = objL1_options[selected_category_label]
 
 # API 호출 파라미터
 URL = "https://kosis.kr/openapi/Param/statisticsParameterData.do"
@@ -33,14 +15,14 @@ params = {
     "method": "getList",
     "apiKey": API_KEY,
     "itmId": "16118AAD6_15118AI8AA",  # 사고자수 총계
-    "objL1": selected_objL1,
+    "objL1": "A04",  # 성별
     "format": "json",
     "jsonVD": "Y",
     "prdSe": "Y",
     "startPrdDe": "2013",
     "endPrdDe": "2023",
     "orgId": "118",
-    "tblId": "DT_11806_N000"
+    "tblId": "DT_11806_N002"  # 성별 분류를 지원하는 통계표 ID
 }
 
 # API 요청
@@ -67,8 +49,8 @@ if isinstance(data, list):
     # 시각화
     fig = px.bar(df_filtered, x='C1_NM', y='DT',
                  text='DT',
-                 labels={'C1_NM': selected_category_label, 'DT': '사고자 수'},
-                 title=f"{selected_year}년 {selected_category_label}별 산업재해 통계")
+                 labels={'C1_NM': '성별', 'DT': '사고자 수'},
+                 title=f"{selected_year}년 성별 산업재해 통계")
     
     fig.update_traces(texttemplate='%{text:.0f}', textposition='outside')
     fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', xaxis_tickangle=-30)
