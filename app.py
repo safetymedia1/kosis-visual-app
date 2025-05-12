@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import os
 
-# ✅ 안전한 외부 폰트 다운로드 경로
-font_url = "https://github.com/alphagov/accessible-pdf-reader/raw/master/fonts/NanumGothic.ttf"
-font_path = "/tmp/NanumGothic.ttf"
+# ✅ 한글 폰트 다운로드 (정상 작동하는 CDN 주소 사용)
+font_url = "https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2307@1.0/NanumSquareNeo-aLt.ttf"
+font_path = "/tmp/NanumSquareNeo-aLt.ttf"
 
 if not os.path.exists(font_path):
     headers = {"User-Agent": "Mozilla/5.0"}
