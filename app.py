@@ -5,11 +5,10 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import os
 
-# 한글 폰트 설치 경로
+# ✅ 한글 폰트 설정 (NanumGothic 다운로드)
 font_url = "https://github.com/naver/nanumfont/blob/master/ttf/NanumGothic.ttf?raw=true"
 font_path = "/tmp/NanumGothic.ttf"
 
-# 폰트가 없으면 다운로드
 if not os.path.exists(font_path):
     import urllib.request
     urllib.request.urlretrieve(font_url, font_path)
@@ -18,25 +17,13 @@ if not os.path.exists(font_path):
 font_prop = fm.FontProperties(fname=font_path)
 plt.rcParams['font.family'] = font_prop.get_name()
 
-
-# 한글 폰트 적용 (NanumGothic)
-font_url = "https://github.com/naver/nanumfont/blob/master/ttf/NanumGothic.ttf?raw=true"
-font_path = "/tmp/NanumGothic.ttf"
-if not os.path.exists(font_path):
-    import urllib.request
-    urllib.request.urlretrieve(font_url, font_path)
-font_prop = fm.FontProperties(fname=font_path)
-plt.rcParams['font.family'] = font_prop.get_name()
-
-# 이후 그래프 코드는 그대로 사용 가능
-
-
+# ✅ 제목
 st.title("📊 산업재해 통계 시각화 (2013–2023, 선택 항목)")
 
-# API 키 불러오기
+# ✅ KOSIS API 키
 API_KEY = st.secrets["KOSIS_API_KEY"]
 
-# API 요청 설정
+# ✅ API 요청 정보
 URL = "https://kosis.kr/openapi/Param/statisticsParameterData.do"
 params = {
     "method": "getList",
@@ -52,23 +39,31 @@ params = {
     "tblId": "DT_11806_N000"
 }
 
-# API 요청
+# ✅ API 요청 실행
 response = requests.get(URL, params=params)
-data = response.json()
+
+try:
+    data = response.json()
+except ValueError:
+    st.error("❌ API 응답 파싱에 실패했습니다.")
+    st.stop()
 
 if isinstance(data, list):
     df = pd.DataFrame(data)
+    
+    # 필요한 열만 추출 및 정리
     df = df[['PRD_DE', 'ITM_NM', 'DT']]
     df['DT'] = pd.to_numeric(df['DT'], errors='coerce')
 
-    # 선택 가능한 항목 목록 만들기
+    # ✅ 선택박스로 항목 선택
     item_list = df['ITM_NM'].unique().tolist()
-    selected_item = st.selectbox("📌 항목을 선택하세요", item_list, index=item_list.index("총계") if "총계" in item_list else 0)
+    default_index = item_list.index("총계") if "총계" in item_list else 0
+    selected_item = st.selectbox("📌 항목을 선택하세요", item_list, index=default_index)
 
-    # 선택한 항목으로 필터링
+    # ✅ 선택한 항목 필터링 후 정렬
     df_selected = df[df['ITM_NM'] == selected_item].sort_values("PRD_DE")
 
-    # 그래프 그리기
+    # ✅ 막대 그래프 그리기
     fig, ax = plt.subplots()
     bars = ax.bar(df_selected['PRD_DE'], df_selected['DT'])
 
@@ -81,5 +76,6 @@ if isinstance(data, list):
     ax.set_title(f"산업재해 통계: {selected_item} (연도별)")
 
     st.pyplot(fig)
+
 else:
-    st.error("❌ API 응답이 올바르지 않습니다.")
+    st.error("❌ API에서 올바른 형식의 데이터가 오지 않았습니다.")
