@@ -6,7 +6,7 @@ import matplotlib.font_manager as fm
 import os
 
 # ✅ 한글 폰트 설정 (NanumGothic 다운로드)
-font_url = "https://github.com/naver/nanumfont/blob/master/ttf/NanumGothic.ttf?raw=true"
+font_url = "https://raw.githubusercontent.com/naver/nanumfont/master/ttf/NanumGothic.ttf"
 font_path = "/tmp/NanumGothic.ttf"
 
 if not os.path.exists(font_path):
