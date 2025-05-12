@@ -3,12 +3,12 @@ import pandas as pd
 import requests
 import matplotlib.pyplot as plt
 
-st.title("📊 산업재해 통계 시각화 (2013–2023, 막대 그래프)")
+st.title("📊 산업재해 총계 통계 (2013–2023, 막대 그래프)")
 
-# API KEY를 secrets.toml에서 가져오기
+# API 키 불러오기
 API_KEY = st.secrets["KOSIS_API_KEY"]
 
-# API 요청 파라미터 설정
+# API 요청 설정
 URL = "https://kosis.kr/openapi/Param/statisticsParameterData.do"
 params = {
     "method": "getList",
@@ -34,23 +34,22 @@ if isinstance(data, list):
     df = df[['PRD_DE', 'ITM_NM', 'DT']]
     df['DT'] = pd.to_numeric(df['DT'], errors='coerce')
 
-    # 항목 선택
-    selected_item = st.selectbox("📌 항목을 선택하세요", df['ITM_NM'].unique())
-    df_selected = df[df['ITM_NM'] == selected_item].sort_values("PRD_DE")
+    # '총계' 항목만 필터링
+    df_total = df[df['ITM_NM'] == "총계"].sort_values("PRD_DE")
 
-    # 그래프
+    # 그래프 그리기
     fig, ax = plt.subplots()
-    bars = ax.bar(df_selected['PRD_DE'], df_selected['DT'])
+    bars = ax.bar(df_total['PRD_DE'], df_total['DT'])
 
-    # 값 라벨 추가
+    # 값 표시
     for bar in bars:
         yval = bar.get_height()
         ax.text(bar.get_x() + bar.get_width()/2.0, yval, f'{yval:.0f}', va='bottom', ha='center', fontsize=9)
 
     ax.set_xlabel("연도")
-    ax.set_ylabel("값")
-    ax.set_title(f"{selected_item} 연도별 통계")
+    ax.set_ylabel("사고 건수")
+    ax.set_title("산업재해 총계 연도별 통계")
 
     st.pyplot(fig)
 else:
-    st.error("❌ API 응답이 올바르지 않습니다. API 키나 파라미터를 확인해주세요.")
+    st.error("❌ API 응답이 올바르지 않습니다.")
