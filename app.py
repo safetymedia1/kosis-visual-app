@@ -1,9 +1,7 @@
 import streamlit as st
 import pandas as pd
 import requests
-import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
-import os
+
 
 # 한글 폰트 적용 (NanumGothic)
 font_url = "https://github.com/naver/nanumfont/blob/master/ttf/NanumGothic.ttf?raw=true"
