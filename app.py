@@ -3,26 +3,27 @@ import pandas as pd
 import requests
 import plotly.express as px
 
-st.title("📊 2023년 산업별 산업재해 통계")
+st.title("📊 산업재해 통계 시각화 (2013–2023, 선택 항목, Plotly)")
 
 API_KEY = st.secrets["KOSIS_API_KEY"]
 
-# 산업별 분류 코드: A02
+URL = "https://kosis.kr/openapi/Param/statisticsParameterData.do"
 params = {
     "method": "getList",
     "apiKey": API_KEY,
-    "itmId": "16118AAD6_15118AI8AA",  # 사고자 수
-    "objL1": "A02",  # 산업별
+    "itmId": "16118AAD6_15118AI8AA+16118AAD6_15118AI8AB+16118AAD6_15118AI8AC+16118AAD6_15118AI8ACAC+16118AAD6_15118AI8ACAB+16118AAD6_15118AI8ACAD+",
+    "objL1": "ALL",
     "format": "json",
     "jsonVD": "Y",
     "prdSe": "Y",
-    "startPrdDe": "2023",
+    "startPrdDe": "2013",
     "endPrdDe": "2023",
     "orgId": "118",
     "tblId": "DT_11806_N000"
 }
 
-response = requests.get("https://kosis.kr/openapi/Param/statisticsParameterData.do", params=params)
+response = requests.get(URL, params=params)
+
 try:
     data = response.json()
 except ValueError:
@@ -31,24 +32,24 @@ except ValueError:
 
 if isinstance(data, list):
     df = pd.DataFrame(data)
-    df = df[['C1_NM', 'DT']]
+    df = df[['PRD_DE', 'ITM_NM', 'DT']]
     df['DT'] = pd.to_numeric(df['DT'], errors='coerce')
 
-    # 불필요한 합계/소계 제거
-    exclude = ["소계", "총계", "합계"]
-    df = df[~df['C1_NM'].isin(exclude)]
-    df = df.dropna()
+    item_list = df['ITM_NM'].unique().tolist()
+    default_index = item_list.index("총계") if "총계" in item_list else 0
+    selected_item = st.selectbox("📌 항목을 선택하세요", item_list, index=default_index)
 
-    # 보기 좋게 정렬
-    df = df.sort_values(by='DT', ascending=False)
+    df_selected = df[df['ITM_NM'] == selected_item].sort_values("PRD_DE")
 
-    # 시각화
-    fig = px.bar(df, x='C1_NM', y='DT', text='DT',
-                 labels={'C1_NM': '산업명', 'DT': '사고자 수'},
-                 title="2023년 산업별 사고자 수")
+    fig = px.bar(df_selected, x='PRD_DE', y='DT',
+                 text='DT',
+                 labels={'PRD_DE': '연도', 'DT': '사고 건수'},
+                 title=f"산업재해 통계: {selected_item} (연도별)")
+
     fig.update_traces(texttemplate='%{text:.0f}', textposition='outside')
-    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', xaxis_tickangle=-30)
+    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
 
     st.plotly_chart(fig, use_container_width=True)
+
 else:
-    st.error("❌ 유효한 데이터가 없습니다.")
+    st.error("❌ API 데이터 형식이 잘못되었습니다.")
