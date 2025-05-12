@@ -3,7 +3,7 @@ import pandas as pd
 import requests
 import plotly.express as px
 
-st.title("📊 산업재해 통계 시각화 (다중 연도 선택)")
+st.title("📊 산업재해 통계 시각화 (항목 및 연도 비교 + 상세 표시)")
 
 API_KEY = st.secrets["KOSIS_API_KEY"]
 
@@ -40,22 +40,32 @@ if isinstance(data, list):
     default_item_index = item_list.index("총계") if "총계" in item_list else 0
     selected_item = st.selectbox("📌 항목을 선택하세요", item_list, index=default_item_index)
 
-    # 다중 연도 선택
+    # 연도 다중 선택
     year_list = sorted(df['PRD_DE'].unique())
     selected_years = st.multiselect("📅 연도를 선택하세요 (복수 선택)", year_list, default=year_list[-1:])
 
-    # 조건 필터링
     df_selected = df[(df['ITM_NM'] == selected_item) & (df['PRD_DE'].isin(selected_years))]
     df_selected = df_selected.sort_values("PRD_DE")
 
-    # 시각화
+    # 시각화: 상세 툴팁 포함
     fig = px.bar(df_selected, x='PRD_DE', y='DT',
                  text='DT',
+                 hover_data={'PRD_DE': True, 'ITM_NM': True, 'DT': True},
                  labels={'PRD_DE': '연도', 'DT': '사고 건수'},
                  title=f"산업재해 통계: {selected_item} (선택 연도별 비교)")
 
-    fig.update_traces(texttemplate='%{text:.0f}', textposition='outside')
-    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+    fig.update_traces(
+        texttemplate='연도 %{x}<br>%{y:.0f}건',
+        textposition='outside',
+        hovertemplate='연도: %{x}<br>항목: %{customdata[1]}<br>사고 건수: %{y}건<extra></extra>'
+    )
+
+    fig.update_layout(
+        uniformtext_minsize=8,
+        uniformtext_mode='hide',
+        xaxis_title='연도',
+        yaxis_title='사고 건수'
+    )
 
     st.plotly_chart(fig, use_container_width=True)
 
