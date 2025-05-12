@@ -3,29 +3,25 @@ import pandas as pd
 import requests
 import plotly.express as px
 
-# 제목
-st.title("📊 산업재해 통계 시각화 (성별 분류)")
+st.title("📊 산업재해 통계 시각화 (2013–2023, 선택 항목, Plotly)")
 
-# API 키
 API_KEY = st.secrets["KOSIS_API_KEY"]
 
-# API 호출 파라미터
 URL = "https://kosis.kr/openapi/Param/statisticsParameterData.do"
 params = {
     "method": "getList",
     "apiKey": API_KEY,
-    "itmId": "16118AAD6_15118AI8AA",  # 사고자수 총계
-    "objL1": "A04",  # 성별
+    "itmId": "16118AAD6_15118AI8AA+16118AAD6_15118AI8AB+16118AAD6_15118AI8AC+16118AAD6_15118AI8ACAC+16118AAD6_15118AI8ACAB+16118AAD6_15118AI8ACAD+",
+    "objL1": "ALL",
     "format": "json",
     "jsonVD": "Y",
     "prdSe": "Y",
     "startPrdDe": "2013",
     "endPrdDe": "2023",
     "orgId": "118",
-    "tblId": "DT_11806_N002"  # 성별 분류를 지원하는 통계표 ID
+    "tblId": "DT_11806_N000"
 }
 
-# API 요청
 response = requests.get(URL, params=params)
 
 try:
@@ -36,26 +32,24 @@ except ValueError:
 
 if isinstance(data, list):
     df = pd.DataFrame(data)
-    df = df[['PRD_DE', 'C1_NM', 'DT']]
+    df = df[['PRD_DE', 'ITM_NM', 'DT']]
     df['DT'] = pd.to_numeric(df['DT'], errors='coerce')
-    
-    # 연도 필터
-    years = sorted(df['PRD_DE'].unique())
-    selected_year = st.selectbox("📅 연도 선택", years, index=len(years)-1)
 
-    # 해당 연도 필터링
-    df_filtered = df[df['PRD_DE'] == selected_year]
+    item_list = df['ITM_NM'].unique().tolist()
+    default_index = item_list.index("총계") if "총계" in item_list else 0
+    selected_item = st.selectbox("📌 항목을 선택하세요", item_list, index=default_index)
 
-    # 시각화
-    fig = px.bar(df_filtered, x='C1_NM', y='DT',
+    df_selected = df[df['ITM_NM'] == selected_item].sort_values("PRD_DE")
+
+    fig = px.bar(df_selected, x='PRD_DE', y='DT',
                  text='DT',
-                 labels={'C1_NM': '성별', 'DT': '사고자 수'},
-                 title=f"{selected_year}년 성별 산업재해 통계")
-    
+                 labels={'PRD_DE': '연도', 'DT': '사고 건수'},
+                 title=f"산업재해 통계: {selected_item} (연도별)")
+
     fig.update_traces(texttemplate='%{text:.0f}', textposition='outside')
-    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', xaxis_tickangle=-30)
+    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
 
     st.plotly_chart(fig, use_container_width=True)
 
 else:
-    st.error("❌ API에서 잘못된 응답이 반환되었습니다.")
+    st.error("❌ API 데이터 형식이 잘못되었습니다.")
