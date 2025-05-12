@@ -2,6 +2,20 @@ import streamlit as st
 import pandas as pd
 import requests
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+import os
+
+# 한글 폰트 적용 (NanumGothic)
+font_url = "https://github.com/naver/nanumfont/blob/master/ttf/NanumGothic.ttf?raw=true"
+font_path = "/tmp/NanumGothic.ttf"
+if not os.path.exists(font_path):
+    import urllib.request
+    urllib.request.urlretrieve(font_url, font_path)
+font_prop = fm.FontProperties(fname=font_path)
+plt.rcParams['font.family'] = font_prop.get_name()
+
+# 이후 그래프 코드는 그대로 사용 가능
+
 
 st.title("📊 산업재해 통계 시각화 (2013–2023, 선택 항목)")
 
