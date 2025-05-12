@@ -1,13 +1,12 @@
 import streamlit as st
 import pandas as pd
 import requests
-import matplotlib.pyplot as plt
 
 st.title("📊 KOSIS 산업재해 통계 시각화")
 
-API_KEY = "당신의_API_키"
-URL = "https://kosis.kr/openapi/statisticsData.do"
+API_KEY = st.secrets["KOSIS_API_KEY"]  # 👈 secrets에서 불러오기
 
+URL = "https://kosis.kr/openapi/statisticsData.do"
 params = {
     "method": "getList",
     "apiKey": API_KEY,
